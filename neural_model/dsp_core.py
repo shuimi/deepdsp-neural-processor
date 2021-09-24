@@ -1,6 +1,5 @@
 import numpy as np
 from random import random
-from math import floor
 from neural_model.config import *
 
 
@@ -15,8 +14,15 @@ samples_field = np.arange(BUFFER_SAMPLE_INDEXING_STARTING_POINT, BUFFER_SIZE, BU
 
 # oscillators
 
-def white_noise(max_amp):
-    return max_amp * random()
+def bias_wave(value=0.0):
+    return np.zeros(BUFFER_SIZE) + value
+
+
+def white_noise(buffer_indexes, max_amp=1.0):
+    new_buffer = []
+    for index in buffer_indexes:
+        new_buffer += [max_amp * (random() - 0.5) * 2]
+    return np.array(new_buffer)
 
 
 def sine_wave(buffer_indexes, freq=BASE_OSC_FREQUENCY, phase=BASE_OSC_PHASE, amp=BASE_OSC_AMP):
@@ -41,6 +47,24 @@ def sawtooth_wave(buffer_indexes, freq=BASE_OSC_FREQUENCY, phase=BASE_OSC_PHASE,
         processed_buffer += [process_sample(sample)]
 
     return np.multiply(np.array(processed_buffer), amp)
+
+
+def pulse_wave(buffer_indexes, freq=BASE_OSC_FREQUENCY, phase=BASE_OSC_PHASE, amp=BASE_OSC_AMP, PWM=0.5):
+    def adjustable_sgn(x, threshold):
+        if x > threshold:
+            return 1
+        elif x < threshold:
+            return -1
+        else:
+            return 0
+
+    def crop(buffer, threshold):
+        new_buffer = []
+        for sample in buffer:
+            new_buffer += [adjustable_sgn(sample, threshold)]
+        return np.array(new_buffer)
+
+    return np.multiply(crop(sawtooth_wave(buffer_indexes, freq=freq, phase=phase, amp=1.0), PWM), amp)
 
 
 def square_wave(buffer_indexes, freq=BASE_OSC_FREQUENCY, phase=BASE_OSC_PHASE, amp=BASE_OSC_AMP):
