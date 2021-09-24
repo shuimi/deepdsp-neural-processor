@@ -1,9 +1,13 @@
 import numpy as np
 from random import random
 from math import floor
-from neural_model.config \
-    import BUFFER_SIZE, BUFFER_SAMPLE_INDEXING_STEP, BUFFER_SAMPLE_INDEXING_STARTING_POINT, SAMPLE_RATE
+from neural_model.config import *
 
+
+# config
+BASE_OSC_FREQUENCY = 440.0
+BASE_OSC_AMP = 1.0
+BASE_OSC_PHASE = 0.0
 
 # samples field
 samples_field = np.arange(BUFFER_SAMPLE_INDEXING_STARTING_POINT, BUFFER_SIZE, BUFFER_SAMPLE_INDEXING_STEP)
@@ -15,19 +19,18 @@ def white_noise(max_amp):
     return max_amp * random()
 
 
-def sine_wave(sample_index, freq=1.0, phase=0.0, amp=1.0):
+def sine_wave(buffer_indexes, freq=BASE_OSC_FREQUENCY, phase=BASE_OSC_PHASE, amp=BASE_OSC_AMP):
+    angular_freq = 2 * np.pi * freq
+    period = SAMPLE_RATE / angular_freq
+    return amp * np.sin(buffer_indexes / period + phase)
 
+
+def triangular_wave(buffer_indexes, freq=BASE_OSC_FREQUENCY, phase=BASE_OSC_PHASE, amp=BASE_OSC_AMP):
     period = SAMPLE_RATE / freq
-
-    return amp * np.sin(sample_index / period + phase)
-
-
-def triangular_wave(sample_index, freq=1.0, phase=0.0, amp=1.0):
-    return amp * (2 / np.pi) * np.arcsin(np.sin(freq * sample_index + phase))
+    return amp * (2 / np.pi) * np.arcsin(np.sin((2 * np.pi * buffer_indexes) / period + phase))
 
 
-def sawtooth_wave(buffer_indexes, freq=1.0, phase=0.0, amp=1.0):
-
+def sawtooth_wave(buffer_indexes, freq=BASE_OSC_FREQUENCY, phase=BASE_OSC_PHASE, amp=BASE_OSC_AMP):
     period = SAMPLE_RATE / freq
 
     def process_sample(sample_index):
@@ -38,6 +41,11 @@ def sawtooth_wave(buffer_indexes, freq=1.0, phase=0.0, amp=1.0):
         processed_buffer += [process_sample(sample)]
 
     return np.multiply(np.array(processed_buffer), amp)
+
+
+def square_wave(buffer_indexes, freq=BASE_OSC_FREQUENCY, phase=BASE_OSC_PHASE, amp=BASE_OSC_AMP):
+    period = SAMPLE_RATE / freq
+    return np.sign(np.sin(2 * np.pi * buffer_indexes / period))
 
 
 # sample processing functions
