@@ -23,7 +23,7 @@ sine_curve, = ax.plot(
 )
 sawtooth_curve, = ax.plot(
     samples_field,
-    sawtooth_wave(samples_field, freq=BASE_FREQUENCY_HZ, amp=SAWTOOTH_BASE_AMP)
+    sawtooth_wave(samples_field, freq=BASE_FREQUENCY_HZ, amp=SAWTOOTH_BASE_AMP, phase=4 * np.pi)
 )
 triangular_curve, = ax.plot(
     samples_field,
@@ -35,7 +35,7 @@ square_curve, = ax.plot(
 )
 pulse_curve, = ax.plot(
     samples_field,
-    pulse_wave(samples_field, freq=BASE_FREQUENCY_HZ, amp=PULSE_BASE_AMP, PWM=0.0)
+    pulse_wave(samples_field, freq=BASE_FREQUENCY_HZ, amp=PULSE_BASE_AMP, pwm=0.0)
 )
 
 plt.ylim([-NORMALIZATION_THRESHOLD, NORMALIZATION_THRESHOLD])
@@ -48,7 +48,10 @@ def animate(i):
         sine_wave(samples_field, freq=BASE_FREQUENCY_HZ + FREQUENCY_STEP_HZ * i, amp=SINE_BASE_AMP)
     )
     sawtooth_curve.set_ydata(
-        sawtooth_wave(samples_field, freq=BASE_FREQUENCY_HZ + FREQUENCY_STEP_HZ * i, amp=SAWTOOTH_BASE_AMP)
+        sawtooth_wave(
+            samples_field,
+            freq=BASE_FREQUENCY_HZ + FREQUENCY_STEP_HZ * i, amp=SAWTOOTH_BASE_AMP, phase=4 * np.pi
+        )
     )
     triangular_curve.set_ydata(
         triangular_wave(samples_field, freq=BASE_FREQUENCY_HZ + FREQUENCY_STEP_HZ * i, amp=TRIANGULAR_BASE_AMP)
@@ -59,7 +62,7 @@ def animate(i):
     pulse_curve.set_ydata(
         pulse_wave(
             samples_field, freq=BASE_FREQUENCY_HZ + FREQUENCY_STEP_HZ * i, amp=PULSE_BASE_AMP,
-            PWM=pulse_wave_modulation[i % 100]
+            pwm=pulse_wave_modulation[i % 100]
         )
     )
     return sine_curve, sawtooth_curve, triangular_curve, square_curve, pulse_curve
