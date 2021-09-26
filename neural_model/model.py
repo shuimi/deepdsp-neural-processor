@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
+import matplotlib.pyplot as plt
 from neural_model.dataset_generation import *
 from neural_model.dsp_core import *
 
@@ -33,7 +34,7 @@ model.fit(
 
 # check prediction
 
-test_data = np.array([get_rand_midrange_signal(samples_field, randint(8, 128)) for i in range(BATCH_SIZE)])
+test_data = np.array([rand_additive_signal(samples_field, 12, 50, 8000, 1.0, sine_wave) for i in range(BATCH_SIZE)])
 clipped = np.array([signal_clipping_filter(signal, sample_hard_clip) for signal in test_data])
 prediction = model.predict_on_batch(test_data)
 
@@ -50,5 +51,7 @@ for i in range(BATCH_SIZE):
     plt.show()
 
 # TODO: add dropouts
+# TODO: add metrics
 # TODO: rename plot objects
 # TODO: validation split
+# TODO: export model graph

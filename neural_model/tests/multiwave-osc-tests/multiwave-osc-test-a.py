@@ -14,9 +14,6 @@ plt.ylim([-NORMALIZATION_THRESHOLD, NORMALIZATION_THRESHOLD])
 # modulators
 pulse_wave_modulation = np.linspace(-1, 1, 100)
 
-# modulations config
-freq_base_modulator_freq = 90
-
 
 def animate(i):
     # update the data to plotting

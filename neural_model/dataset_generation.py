@@ -1,183 +1,130 @@
-import matplotlib.pyplot as plt
 from random import uniform, randint
-from neural_model.config import *
+
 from neural_model.dsp_core import *
 
+# amount of buffer samples (raw and processed) to generate
+MULTIWAVE_SIGNAL_SAMPLES_AMOUNT = 512
+ADDITIVE_SIGNAL_SAMPLES_AMOUNT = 512
 
-# random signal generation
-
-def get_rand_hirange_signal(sample_index, harmonics_amount):
-    signal = np.array(sine_wave(sample_index, amp=0))
-
-    for harmonic in range(harmonics_amount):
-        np.add(
-            signal,
-            sine_wave(sample_index, freq=uniform(200, 880), phase=np.pi * random(), amp=uniform(0, 4)),
-            out=signal
-        )
-
-    np.add(signal, white_noise(uniform(0, 4)))
-
-    return normalize_filter(signal, NORMALIZATION_THRESHOLD)
-
-
-def get_rand_midrange_signal(sample_index, harmonics_amount):
-    signal = np.array(sine_wave(sample_index, amp=0))
-
-    for harmonic in range(harmonics_amount):
-        np.add(
-            signal,
-            sine_wave(sample_index, freq=uniform(1, 200), phase=np.pi * random(), amp=uniform(0, 4)),
-            out=signal
-        )
-
-    np.add(signal, white_noise(uniform(0, 2)))
-
-    return normalize_filter(signal, NORMALIZATION_THRESHOLD)
-
-
-def get_rand_lowrange_signal(sample_index, harmonics_amount):
-    signal = np.array(sine_wave(sample_index, amp=0))
-
-    for harmonic in range(harmonics_amount):
-        np.add(
-            signal,
-            sine_wave(sample_index, freq=uniform(0.01, 1), phase=np.pi * random(), amp=uniform(0, 2)),
-            out=signal
-        )
-
-    np.add(signal, white_noise(uniform(0, 1)))
-
-    return normalize_filter(signal, NORMALIZATION_THRESHOLD)
-
-
-input_signal_samples = []
-
-
-input_signal_samples = np.asarray(input_signal_samples)
-
+# modulators
+pulse_wave_modulation = np.linspace(-1, 1, 100)
+filter_decay_modulation = np.linspace(0, 1, 100)
 
 # dataset generation
-
 input_signal_samples = []
 
-for sample in range(SIGNAL_SAMPLES_AMOUNT):
-    buffer = get_rand_hirange_signal(samples_field, randint(1, 32))
-    buffer_normalized = normalize_filter(buffer, 1)
 
-    # augmentation: amplitude
-    for i in range(AUGMENTATION_QUANTITY):
+# mixed waves signal with modulations
+
+for j in range(10):
+
+    low_bound_hz = 50
+    hi_bound_hz = 500
+
+    modulation_frequencies_amount = 10
+
+    modulation_frequencies = [
+        uniform(low_bound_hz, hi_bound_hz) for k in range(modulation_frequencies_amount)
+    ]
+
+    for i in range(MULTIWAVE_SIGNAL_SAMPLES_AMOUNT):
         input_signal_samples += [
-            np.multiply(buffer_normalized, uniform(-NORMALIZATION_THRESHOLD, NORMALIZATION_THRESHOLD))
+            multiwave_oscillator(
+                samples_field,
+                freq=NYQUIST_FREQUENCY * triangular_wave(
+                    i, freq=modulation_frequencies[7] * sine_wave(i, freq=modulation_frequencies[8])
+                ),
+                sine_amp=triangular_wave(i, freq=modulation_frequencies[0]),
+                sine_phase=2 * np.pi * sine_wave(i, freq=modulation_frequencies[1]),
+                sawtooth_amp=sine_wave(i, freq=modulation_frequencies[2]),
+                sawtooth_phase=2 * np.pi * triangular_wave(i, freq=modulation_frequencies[3]),
+                square_amp=triangular_wave(i, freq=modulation_frequencies[4]),
+                triangle_amp=sine_wave(i, freq=modulation_frequencies[5]),
+                pulse_amp=sawtooth_wave(i, freq=modulation_frequencies[6]),
+                pulse_pwm=pulse_wave_modulation[i % 100],
+                normalize=False
+            )
         ]
 
-    buffer = get_rand_midrange_signal(samples_field, randint(1, 32))
-    buffer_normalized = normalize_filter(buffer, 1)
 
-    # augmentation: amplitude
-    for i in range(AUGMENTATION_QUANTITY):
-        input_signal_samples += [
-            np.multiply(buffer_normalized, uniform(-NORMALIZATION_THRESHOLD, NORMALIZATION_THRESHOLD))
-        ]
+# mixed waves signal with modulations and filtering
 
-    buffer = get_rand_lowrange_signal(samples_field, randint(1, 3))
-    buffer_normalized = normalize_filter(buffer, 1)
+for i in range(MULTIWAVE_SIGNAL_SAMPLES_AMOUNT):
+    input_signal_samples += [
+        normalize_filter(
+            lowpass(
+                multiwave_oscillator(
+                    samples_field,
+                    freq=NYQUIST_FREQUENCY * sawtooth_wave(i, freq=200 * sine_wave(i, freq=90)),
+                    sine_amp=triangular_wave(i, freq=220),
+                    sine_phase=2 * np.pi * square_wave(i, freq=220),
+                    sawtooth_amp=sine_wave(i, freq=80),
+                    sawtooth_phase=2 * np.pi * triangular_wave(i, freq=320),
+                    square_amp=triangular_wave(i, freq=55),
+                    triangle_amp=sawtooth_wave(i, freq=1110),
+                    pulse_amp=sawtooth_wave(i, freq=440),
+                    pulse_pwm=pulse_wave_modulation[i % 100],
+                    normalize=False
+                )
+                + white_noise(samples_field, 0.5),
+                filter_decay_modulation[i % 100]
+            ),
+            NORMALIZATION_THRESHOLD
+        )
+    ]
 
-    # augmentation: amplitude
-    for i in range(AUGMENTATION_QUANTITY):
-        input_signal_samples += [
-            np.multiply(buffer_normalized, uniform(-NORMALIZATION_THRESHOLD, NORMALIZATION_THRESHOLD))
-        ]
+
+# additive sine wave random signals generation
+
+def rand_additive_signal(signal_buffer, harmonics_amount, low_freq_bound, hi_freq_bound, noise_max_amp, wave):
+    signal = np.zeros(len(signal_buffer))
+
+    for harmonic in range(harmonics_amount):
+        signal = signal + wave(
+            signal_buffer,
+            freq=uniform(low_freq_bound, hi_freq_bound),
+            phase=2 * np.pi * random(),
+            amp=uniform(-NORMALIZATION_THRESHOLD, NORMALIZATION_THRESHOLD)
+        )
+
+    signal = normalize_filter(signal, NORMALIZATION_THRESHOLD)
+    return normalize_filter(signal + white_noise(uniform(signal_buffer, noise_max_amp)), NORMALIZATION_THRESHOLD)
+
+
+for i in range(ADDITIVE_SIGNAL_SAMPLES_AMOUNT):
+    input_signal_samples += [
+        lowpass(
+            rand_additive_signal(samples_field, randint(1, 16), 50, 8000, 1.0, sine_wave),
+            filter_decay_modulation[i % 100]
+        ),
+        lowpass(
+            rand_additive_signal(samples_field, randint(1, 16), 50, 600, 0.8, square_wave),
+            filter_decay_modulation[i % 100]
+        ),
+        lowpass(
+            rand_additive_signal(samples_field, randint(1, 16), 50, 8000, 1.2, triangular_wave),
+            filter_decay_modulation[i % 100]
+        ),
+        lowpass(
+            rand_additive_signal(samples_field, randint(1, 16), 50, 8000, 1.4, pulse_wave),
+            filter_decay_modulation[i % 100]
+        ),
+        lowpass(
+            rand_additive_signal(samples_field, randint(1, 16), 20, 900, 0.7, sawtooth_wave),
+            filter_decay_modulation[i % 100]
+        )
+    ]
 
 
 input_signal_samples = np.asarray(input_signal_samples)
 
 
-# adding sine sweep
-
-SWEEP_LENGTH_SAMPLES = 1024
-
-
-def sine_sweep(sample_index, base_freq=1, phase=0, amp=1):
-    return amp * np.sin((8 * SWEEP_LENGTH_SAMPLES * base_freq) / (sample_index + 1) + phase)
+# the processing which will be approximated by model
+output_signal_samples = np.array(
+    [signal_clipping_filter(signal, sample_hard_clip) for signal in input_signal_samples]
+)
 
 
-t2 = np.arange(0, SWEEP_LENGTH_SAMPLES, 1)
-full_sweep = sine_sweep(t2, base_freq=1, amp=1)
-full_sweep[0] = 0
+# data export
 
-for chunk in np.array_split(full_sweep, SWEEP_LENGTH_SAMPLES / BUFFER_SIZE):
-    for amp_coefficient in [0.25, 1, -2]:
-        np.append(input_signal_samples, [np.multiply(chunk, amp_coefficient)])
-    for amp_coefficient in [4, 32]:
-        np.append(input_signal_samples,
-                  [np.multiply(
-                      signal_clipping_filter(np.multiply(chunk, amp_coefficient), sample_hard_clip),
-                      2
-                  )])
-
-
-# some stats about dataset
-#
-# # distance between two vectors
-# def distance(vec1, vec2):
-#     _sum = 0.0
-#     for index in range(len(vec1)):
-#         _sum += abs(vec1[index] - vec2[index]) ** 2
-#     return _sum ** 0.5
-#
-#
-# def get_stats():
-#     min_distance = distance(input_signal_samples[0], input_signal_samples[1])
-#     max_distance = 0
-#
-#     distances_sum = 0.0
-#     iterations = 0
-#     for i in range(len(input_signal_samples)):
-#         for j in range(i + 1, len(input_signal_samples)):
-#             iterations = iterations + 1
-#             distances_sum = distances_sum + distance(input_signal_samples[i], input_signal_samples[j])
-#             if distances_sum > max_distance:
-#                 max_distance = distances_sum
-#             if distances_sum < min_distance:
-#                 min_distance = distances_sum
-#
-#     average_distance = distances_sum / iterations
-#
-#     return {'avg': average_distance, 'min': min_distance, 'max': max_distance}
-#
-#
-# def report_distance_metrics(average_distance, min_distance, max_distance):
-#     print('Average distance between samples: ', average_distance)
-#     print('Min distance between samples: ', min_distance)
-#     print('Max distance between samples: ', max_distance)
-#
-#
-# print('Input samples amount: ', len(input_signal_samples))
-# stats = get_stats()
-# report_distance_metrics(stats['avg'], stats['min'], stats['max'])
-
-
-# original signal processing
-
-output_signal_samples = np.array([signal_clipping_filter(signal, sample_hard_clip) for signal in input_signal_samples])
-
-# # dataset plotting
-#
-# for signal_index in range(len(input_signal_samples)):
-#     fig, ax = plt.subplots()
-#
-#     ax.plot(samples_field, input_signal_samples[signal_index])
-#     ax.plot(samples_field, output_signal_samples[signal_index])
-#
-#     ax.set(xlabel='buffer samples', ylabel='amplitude', title='Signal buffer')
-#     ax.grid()
-#     plt.show()
-
-# # data export
-#
-# with open('input_signal_samples.json', 'w') as file:
-#     json.dump(input_signal_samples, file)
-#
-# with open('output_signal_samples.json', 'w') as file:
-#     json.dump(output_signal_samples, file)
+# TODO: export generated data

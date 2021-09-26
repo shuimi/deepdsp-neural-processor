@@ -9,12 +9,6 @@ BUFFER_SIZE = int(64)
 BUFFER_SAMPLE_INDEXING_STARTING_POINT = int(0)
 BUFFER_SAMPLE_INDEXING_STEP = int(1)
 
-# amount of buffer samples (raw and processed) to generate
-SIGNAL_SAMPLES_AMOUNT = 512
-
-# coefficient of data multiplication while augmentation
-AUGMENTATION_QUANTITY = 4
-
 # data generator config
 NORMALIZATION_THRESHOLD = float(4)  # threshold at which the signal in each buffer is normalized
 

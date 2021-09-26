@@ -139,6 +139,29 @@ def normalize_filter(signal_buffer, max_amp):
     return np.multiply(signal_buffer, normalization_coefficient)
 
 
+# IIR lowpass filter
+def lowpass_iir_filter():
+    previous_sample = 0.0
+
+    def lowpass_filter(x, decay):
+        b = 1.0 - decay
+        nonlocal previous_sample
+        previous_sample += b * (x - previous_sample)
+        return previous_sample
+
+    return lowpass_filter
+
+
+def lowpass(buffer, decay):
+    lpf = lowpass_iir_filter()
+
+    processed_buffer = []
+    for sample in buffer:
+        processed_buffer += [lpf(sample, decay)]
+
+    return processed_buffer
+
+
 # oscillators
 
 def multiwave_oscillator(
