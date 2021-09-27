@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Dropout
 import matplotlib.pyplot as plt
 from neural_model.dataset_generation import *
 from neural_model.dsp_core import *
@@ -10,13 +10,13 @@ model = Sequential()
 
 model.add(Dense(units=BUFFER_SIZE, activation='elu'))
 model.add(Dense(units=128, activation='elu'))
-model.add(Dense(units=128, activation='elu'))
+model.add(Dropout(rate=0.02))
 model.add(Dense(units=128, activation='elu'))
 model.add(Dense(units=BUFFER_SIZE, activation='tanh'))
 
 model.compile(
     loss='mean_squared_error',
-    optimizer='sgd'
+    optimizer='rmsprop'
 )
 # 65536
 model.fit(
@@ -28,7 +28,8 @@ model.fit(
         tf.keras.callbacks.EarlyStopping(
             monitor='loss', patience=EARLY_STOPPING_PATIENCE, min_delta=EARLY_STOPPING_MIN_DELTA
         )
-    ]
+    ],
+    validation_split=0.2
 )
 
 

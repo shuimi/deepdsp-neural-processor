@@ -88,7 +88,7 @@ def rand_additive_signal(signal_buffer, harmonics_amount, low_freq_bound, hi_fre
         )
 
     signal = normalize_filter(signal, NORMALIZATION_THRESHOLD)
-    return normalize_filter(signal + white_noise(uniform(signal_buffer, noise_max_amp)), NORMALIZATION_THRESHOLD)
+    return normalize_filter(signal + white_noise(signal_buffer, uniform(0, noise_max_amp)), NORMALIZATION_THRESHOLD)
 
 
 for i in range(ADDITIVE_SIGNAL_SAMPLES_AMOUNT):
