@@ -190,11 +190,19 @@ def multiwave_oscillator(
 
 ):
     waves_combination = sine_wave(buffer_indexes, freq=freq, phase=sine_phase, amp=sine_amp) + \
-        triangular_wave(buffer_indexes, freq=freq, phase=triangle_phase, amp=triangle_amp) + \
-        sawtooth_wave(buffer_indexes, freq=freq, phase=sawtooth_phase, amp=sawtooth_amp) + \
-        square_wave(buffer_indexes, freq=freq, phase=square_phase, amp=square_amp) + \
-        pulse_wave(buffer_indexes, freq=freq, phase=pulse_phase, amp=pulse_amp, pwm=pulse_pwm)
+                        triangular_wave(buffer_indexes, freq=freq, phase=triangle_phase, amp=triangle_amp) + \
+                        sawtooth_wave(buffer_indexes, freq=freq, phase=sawtooth_phase, amp=sawtooth_amp) + \
+                        square_wave(buffer_indexes, freq=freq, phase=square_phase, amp=square_amp) + \
+                        pulse_wave(buffer_indexes, freq=freq, phase=pulse_phase, amp=pulse_amp, pwm=pulse_pwm)
 
     if not normalize:
         return waves_combination
     return normalize_filter(waves_combination, max_amp=max_amp)
+
+
+def amp_to_db(amp):
+    return 10 * np.log10(amp)
+
+
+def db_to_amp(db):
+    return 10 ** (0.1 * db)

@@ -1,24 +1,44 @@
+from random import randint, uniform
+
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
+from keras import backend as K
 import matplotlib.pyplot as plt
-from neural_model.dataset_generation import *
+
+from neural_model.dataset_generation import chord_additive_signal, approximation_target_filter
+from neural_model.intervals_config import chords
 from neural_model.dsp_core import *
 
 
-model = Sequential()
+def activation(x):
+    return NORMALIZATION_THRESHOLD * 2 * K.sigmoid(0.25 * x) - 1
 
-model.add(Dense(units=BUFFER_SIZE, activation='elu'))
-model.add(Dense(units=128, activation='elu'))
-model.add(Dropout(rate=0.02))
-model.add(Dense(units=128, activation='elu'))
-model.add(Dense(units=BUFFER_SIZE, activation='tanh'))
+
+# load dataset
+
+input_signal_samples = np.load('dataset/input_signal_samples.npy')
+output_signal_samples = np.load('dataset/output_signal_samples.npy')
+
+# setup model
+model = Sequential([
+    Dense(units=BUFFER_SIZE, activation=activation),
+    Dense(units=128, activation=activation),
+    Dropout(rate=0.02),
+    Dense(units=128, activation=activation),
+    Dropout(rate=0.02),
+    Dense(units=BUFFER_SIZE, activation=activation)
+])
+
 
 model.compile(
     loss='mean_squared_error',
-    optimizer='rmsprop'
+    optimizer='rmsprop',
+    metrics=['accuracy']
 )
-# 65536
+
+# train model
+
 model.fit(
     input_signal_samples,
     output_signal_samples,
@@ -33,7 +53,11 @@ model.fit(
 )
 
 
-# check prediction
+print(model.summary())
+
+
+# generate test data
+
 test_data = []
 
 for _ in range(BATCH_SIZE):
@@ -53,24 +77,45 @@ for _ in range(BATCH_SIZE):
 
 test_data = np.array(test_data)
 
-clipped = np.array([signal_clipping_filter(signal, sample_hard_clip) for signal in test_data])
+processed = np.array([approximation_target_filter(signal) for signal in test_data])
+
+
+# check prediction
 
 prediction = model.predict_on_batch(test_data)
+
+
+def max_error(init_buffer, processed_buffer):
+    return np.max(np.absolute(init_buffer) - np.absolute(processed_buffer))
+
+
+model.save('model.h5')
+
+
+tf.keras.utils.plot_model(
+    model,
+    to_file="model_graph.png",
+    show_shapes=False,
+    show_dtype=False,
+    show_layer_names=True,
+    rankdir="TB",
+    expand_nested=False,
+    dpi=96,
+    layer_range=None,
+)
+
 
 for i in range(BATCH_SIZE):
     fig, ax = plt.subplots()
 
-    ax.plot(samples_field, clipped[i])
+    ax.plot(samples_field, processed[i])
     ax.plot(samples_field, prediction[i])
 
     ax.set(xlabel='time (s)', ylabel='dB', title='Signal')
-    ax.grid()
+    ax.text(0.05, 0.9, 'max error: ' + str(max_error(processed[i], prediction[i])), transform=ax.transAxes)
 
-    # fig.savefig("signal.png")
+    ax.grid()
     plt.show()
 
-# TODO: add dropouts
-# TODO: add metrics
-# TODO: rename plot objects
-# TODO: validation split
-# TODO: export model graph
+
+# TODO: add signal audio preview

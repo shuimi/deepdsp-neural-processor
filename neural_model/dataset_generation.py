@@ -154,12 +154,18 @@ for amplitude in np.linspace(-4, 4, DC_STEPS_AMOUNT):
 shuffle(input_signal_samples)
 input_signal_samples = np.asarray(input_signal_samples)
 
+
+def approximation_target_filter(signal_buffer):
+    return lowpass(signal_clipping_filter(signal_buffer, sample_hard_clip), 0.85)
+
+
 # the processing which will be approximated by model
 output_signal_samples = np.array(
-    [signal_clipping_filter(signal, sample_hard_clip) for signal in input_signal_samples]
+    [approximation_target_filter(signal) for signal in input_signal_samples]
 )
 
 
 # data export
 
-# TODO: export generated data
+np.save('dataset/input_signal_samples.npy', input_signal_samples)
+np.save('dataset/output_signal_samples.npy', output_signal_samples)
