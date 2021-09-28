@@ -1,6 +1,7 @@
-from random import uniform, randint
+from random import uniform, randint, shuffle
 
 from neural_model.dsp_core import *
+from neural_model.intervals_config import chords
 
 # amount of buffer samples (raw and processed) to generate
 MULTIWAVE_SIGNAL_SAMPLES_AMOUNT = 512
@@ -74,7 +75,7 @@ for i in range(MULTIWAVE_SIGNAL_SAMPLES_AMOUNT):
     ]
 
 
-# additive sine wave random signals generation
+# additive signals generation (rand harmonics)
 
 def rand_additive_signal(signal_buffer, harmonics_amount, low_freq_bound, hi_freq_bound, noise_max_amp, wave):
     signal = np.zeros(len(signal_buffer))
@@ -91,33 +92,67 @@ def rand_additive_signal(signal_buffer, harmonics_amount, low_freq_bound, hi_fre
     return normalize_filter(signal + white_noise(signal_buffer, uniform(0, noise_max_amp)), NORMALIZATION_THRESHOLD)
 
 
-for i in range(ADDITIVE_SIGNAL_SAMPLES_AMOUNT):
-    input_signal_samples += [
-        lowpass(
-            rand_additive_signal(samples_field, randint(1, 16), 50, 8000, 1.0, sine_wave),
-            filter_decay_modulation[i % 100]
-        ),
-        lowpass(
-            rand_additive_signal(samples_field, randint(1, 16), 50, 600, 0.8, square_wave),
-            filter_decay_modulation[i % 100]
-        ),
-        lowpass(
-            rand_additive_signal(samples_field, randint(1, 16), 50, 8000, 1.2, triangular_wave),
-            filter_decay_modulation[i % 100]
-        ),
-        lowpass(
-            rand_additive_signal(samples_field, randint(1, 16), 50, 8000, 1.4, pulse_wave),
-            filter_decay_modulation[i % 100]
-        ),
-        lowpass(
-            rand_additive_signal(samples_field, randint(1, 16), 20, 900, 0.7, sawtooth_wave),
-            filter_decay_modulation[i % 100]
+# additive signals generation (chord-based)
+
+def chord_additive_signal(chord, wave, signal_buffer, freq, noise_max_amp):
+    signal = np.zeros(len(signal_buffer))
+
+    for interval in chord:
+        signal = signal + wave(
+            signal_buffer,
+            freq=freq * interval,
+            amp=uniform(-NORMALIZATION_THRESHOLD, NORMALIZATION_THRESHOLD)
         )
+
+    signal = normalize_filter(signal, NORMALIZATION_THRESHOLD)
+    return normalize_filter(signal + white_noise(signal_buffer, uniform(0, noise_max_amp)), NORMALIZATION_THRESHOLD)
+
+
+# generate single-wave additive signals with lowpass filter modulation
+
+for wave in [sine_wave, square_wave, sawtooth_wave, pulse_wave, triangular_wave]:
+    lf_bound = uniform(20, 50)
+    hf_bound = uniform(600, 12000)
+    noise_max_amp = uniform(0.2, 1.0)
+    harmonics_amount = randint(1, 16)
+
+    for i in range(ADDITIVE_SIGNAL_SAMPLES_AMOUNT):
+        input_signal_samples += [
+            lowpass(
+                rand_additive_signal(samples_field, harmonics_amount, lf_bound, hf_bound, noise_max_amp, wave),
+                filter_decay_modulation[i % 100]
+            )
+        ]
+
+
+# generate single-wave (chord-based) additive sweep signals with white noise
+
+FRAMES_AMOUNT = 256
+NOISE_AMP_CEIL = 0.2
+MIN_SIGNAL_AMP = 0.2
+AMP_VARIANTS_AMOUNT = 4
+
+for amp_variant in np.linspace(MIN_SIGNAL_AMP, NORMALIZATION_THRESHOLD, AMP_VARIANTS_AMOUNT):
+    for chord in chords.values():
+        for wave in [sine_wave, square_wave, sawtooth_wave, pulse_wave, triangular_wave]:
+            for i in range(FRAMES_AMOUNT):
+                input_signal_samples += [
+                    normalize_filter(
+                        chord_additive_signal(chord, wave, samples_field, 10 + 10 * i, NOISE_AMP_CEIL),
+                        amp_variant
+                    )
+                ]
+
+# generate constant signals with DC offset
+DC_STEPS_AMOUNT = 16
+for amplitude in np.linspace(-4, 4, DC_STEPS_AMOUNT):
+    input_signal_samples += [
+        bias_wave(amplitude)
     ]
 
-
+# make list np.array
+shuffle(input_signal_samples)
 input_signal_samples = np.asarray(input_signal_samples)
-
 
 # the processing which will be approximated by model
 output_signal_samples = np.array(

@@ -34,9 +34,27 @@ model.fit(
 
 
 # check prediction
+test_data = []
 
-test_data = np.array([rand_additive_signal(samples_field, 12, 50, 8000, 1.0, sine_wave) for i in range(BATCH_SIZE)])
+for _ in range(BATCH_SIZE):
+
+    chord = list(chords.values())[randint(0, len(chords.values()) - 1)]
+    wave = [sine_wave, square_wave, sawtooth_wave, pulse_wave, triangular_wave][randint(0, 4)]
+    noise_max_amp = uniform(0, 0.5)
+    base_freq = uniform(10, 12000)
+    norm_amp = uniform(0.1, 4.0)
+
+    test_data += [
+        normalize_filter(
+            chord_additive_signal(chord, wave, samples_field, base_freq, noise_max_amp),
+            norm_amp
+        )
+    ]
+
+test_data = np.array(test_data)
+
 clipped = np.array([signal_clipping_filter(signal, sample_hard_clip) for signal in test_data])
+
 prediction = model.predict_on_batch(test_data)
 
 for i in range(BATCH_SIZE):
