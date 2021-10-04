@@ -144,11 +144,25 @@ for amp_variant in np.linspace(MIN_SIGNAL_AMP, NORMALIZATION_THRESHOLD, AMP_VARI
                 ]
 
 # generate constant signals with DC offset
-DC_STEPS_AMOUNT = 16
-for amplitude in np.linspace(-4, 4, DC_STEPS_AMOUNT):
+DC_STEPS_AMOUNT = 1024
+for amplitude in np.linspace(-NORMALIZATION_THRESHOLD, NORMALIZATION_THRESHOLD, DC_STEPS_AMOUNT):
     input_signal_samples += [
         bias_wave(amplitude)
     ]
+
+
+# dataset augmentation on phase, freq and amp
+PHASE_STEPS = 64
+AMP_STEPS = 16
+
+
+# def pitch(signal_buffer, semitones):
+#     return signal_buffer
+#
+#
+# for buffer in input_signal_samples:
+#     buffer
+
 
 # make list np.array
 shuffle(input_signal_samples)

@@ -200,9 +200,6 @@ def multiwave_oscillator(
     return normalize_filter(waves_combination, max_amp=max_amp)
 
 
-def amp_to_db(amp):
-    return 10 * np.log10(amp)
-
-
-def db_to_amp(db):
-    return 10 ** (0.1 * db)
+def to16bit(_audio):
+    _audio *= 32767 / np.max(np.abs(_audio))  # normalize
+    return _audio.astype(np.int16)

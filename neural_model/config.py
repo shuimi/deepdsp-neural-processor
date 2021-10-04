@@ -1,8 +1,6 @@
 # config
-from numpy import pi
-
 SAMPLE_RATE = int(44100)
-NYQUIST_FREQUENCY = SAMPLE_RATE / 2
+NYQUIST_FREQUENCY = SAMPLE_RATE // 2
 
 # buffer settings
 BUFFER_SIZE = int(128)
