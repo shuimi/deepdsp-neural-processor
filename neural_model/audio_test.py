@@ -5,7 +5,8 @@ SECONDS = 2
 time = np.arange(0, SAMPLE_RATE * SECONDS, 1)
 
 
-audio = multiwave_oscillator(time, freq=440)
+audio = detune(time, sawtooth_wave, freq=55, voices_amount=2, detune_st=0.1, blend=1)
+# audio = lowpass(audio, 0.4)
 
 
 play = sa.play_buffer(

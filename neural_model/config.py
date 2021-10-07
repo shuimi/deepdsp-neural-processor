@@ -13,6 +13,3 @@ NORMALIZATION_THRESHOLD = float(4)  # threshold at which the signal in each buff
 # model config
 BATCH_SIZE = 32
 EPOCHS_AMOUNT = 65536
-
-EARLY_STOPPING_PATIENCE = 4
-EARLY_STOPPING_MIN_DELTA = 0.0001

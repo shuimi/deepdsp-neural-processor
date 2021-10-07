@@ -1,3 +1,5 @@
+from math import floor
+
 import numpy as np
 from random import random
 from neural_model.config import *
@@ -26,10 +28,7 @@ def white_noise(buffer_indexes, max_amp=1.0):
 
 def sine_wave(buffer_indexes, freq=BASE_OSC_FREQUENCY, phase=BASE_OSC_PHASE, amp=BASE_OSC_AMP):
     angular_freq = 2 * np.pi * freq
-    if angular_freq == 0:
-        period = float('inf')
-    else:
-        period = SAMPLE_RATE / angular_freq
+    period = float('inf') if angular_freq == 0 else SAMPLE_RATE / angular_freq
     return amp * np.sin(buffer_indexes / period + phase)
 
 
@@ -200,6 +199,41 @@ def multiwave_oscillator(
     return normalize_filter(waves_combination, max_amp=max_amp)
 
 
+def detune(samples_buffer, wave, freq, voices_amount, detune_st, blend):
+    if not 1 < voices_amount <= 128:
+        raise Exception('Invalid voices_amount, use range (2; 128]')
+    if detune_st < 0:
+        raise Exception('Invalid detune_st, use positives')
+    if not 0 <= blend <= 1:
+        raise Exception('Invalid blend')
+
+    output = samples_buffer * 0 if voices_amount == 1 else wave(samples_buffer, freq=freq)
+    for detune_coefficient in np.arange(-detune_st / 2, detune_st / 2, detune_st / (voices_amount - 1)):
+        output += wave(samples_buffer, freq=(1.0 + detune_coefficient / 12) * freq)
+
+    return output / voices_amount
+
+
 def to16bit(_audio):
     _audio *= 32767 / np.max(np.abs(_audio))  # normalize
     return _audio.astype(np.int16)
+
+
+def rms(buffer):
+    return np.sqrt(np.mean(buffer ** 2))
+
+
+def db_rms(rms_value):
+    return 10 * np.log10(rms_value)
+
+
+def pitch(buffer, semitones):
+    if semitones > 0:
+        new_buffer = buffer
+        samples_to_remove = floor(BUFFER_SIZE * 0.5 * 12 / semitones)
+        semitones
+    elif semitones == 0:
+        return buffer
+    else:
+        semitones
+    return buffer

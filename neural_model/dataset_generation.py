@@ -1,11 +1,12 @@
+from itertools import cycle
 from random import uniform, randint, shuffle
 
 from neural_model.dsp_core import *
 from neural_model.intervals_config import chords
 
 # amount of buffer samples (raw and processed) to generate
-MULTIWAVE_SIGNAL_SAMPLES_AMOUNT = 512
-ADDITIVE_SIGNAL_SAMPLES_AMOUNT = 512
+MULTIWAVE_SIGNAL_SAMPLES_AMOUNT = 2048
+ADDITIVE_SIGNAL_SAMPLES_AMOUNT = 2048
 
 # modulators
 pulse_wave_modulation = np.linspace(-1, 1, 100)
@@ -43,7 +44,7 @@ for j in range(10):
                 triangle_amp=sine_wave(i, freq=modulation_frequencies[5]),
                 pulse_amp=sawtooth_wave(i, freq=modulation_frequencies[6]),
                 pulse_pwm=pulse_wave_modulation[i % 100],
-                normalize=False
+                normalize=True
             )
         ]
 
@@ -128,20 +129,18 @@ for wave in [sine_wave, square_wave, sawtooth_wave, pulse_wave, triangular_wave]
 # generate single-wave (chord-based) additive sweep signals with white noise
 
 FRAMES_AMOUNT = 256
-NOISE_AMP_CEIL = 0.2
-MIN_SIGNAL_AMP = 0.2
-AMP_VARIANTS_AMOUNT = 4
+NOISE_AMP_CEIL = 0.25
 
-for amp_variant in np.linspace(MIN_SIGNAL_AMP, NORMALIZATION_THRESHOLD, AMP_VARIANTS_AMOUNT):
-    for chord in chords.values():
-        for wave in [sine_wave, square_wave, sawtooth_wave, pulse_wave, triangular_wave]:
-            for i in range(FRAMES_AMOUNT):
-                input_signal_samples += [
-                    normalize_filter(
-                        chord_additive_signal(chord, wave, samples_field, 10 + 10 * i, NOISE_AMP_CEIL),
-                        amp_variant
-                    )
-                ]
+
+for chord in chords.values():
+    for wave in [sine_wave, square_wave, sawtooth_wave, pulse_wave, triangular_wave]:
+        for i in range(FRAMES_AMOUNT):
+            input_signal_samples += [
+                normalize_filter(
+                    chord_additive_signal(chord, wave, samples_field, 10 + 10 * i, NOISE_AMP_CEIL),
+                    NORMALIZATION_THRESHOLD
+                )
+            ]
 
 # generate constant signals with DC offset
 DC_STEPS_AMOUNT = 1024
@@ -151,17 +150,11 @@ for amplitude in np.linspace(-NORMALIZATION_THRESHOLD, NORMALIZATION_THRESHOLD, 
     ]
 
 
-# dataset augmentation on phase, freq and amp
+# dataset augmentation on phase, cuts, filters
 PHASE_STEPS = 64
 AMP_STEPS = 16
 
-
-# def pitch(signal_buffer, semitones):
-#     return signal_buffer
-#
-#
-# for buffer in input_signal_samples:
-#     buffer
+#TODO:123
 
 
 # make list np.array
