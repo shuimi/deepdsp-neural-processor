@@ -3,9 +3,9 @@ from random import uniform
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
-from neural_model.dsp_core import *
-from neural_model.config import *
-from neural_model.intervals_config import chords
+from neural_model.dsp_core.dsp_core import *
+from neural_model.config.config import *
+from neural_model.config.intervals_config import chords
 
 NOISE_AMP_CEIL = 0.2
 

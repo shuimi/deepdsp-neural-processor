@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
-from neural_model.dsp_core import *
+from neural_model.dsp_core.dsp_core import *
 
 
 def windowed_sinc_filter(cutoff_freq=0.05, filter_length=15):

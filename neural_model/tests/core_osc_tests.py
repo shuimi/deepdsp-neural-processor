@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
-from neural_model.dsp_core import *
+from neural_model.dsp_core.dsp_core import *
 
 # test config
 BASE_FREQUENCY_HZ = 440.0

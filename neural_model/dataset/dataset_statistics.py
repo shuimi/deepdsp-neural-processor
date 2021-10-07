@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
-from statistics import fmean, median, quantiles, stdev, pvariance
-from neural_model.dsp_core import *
+from statistics import fmean, median, stdev, pvariance
+from neural_model.dsp_core.dsp_core import *
 
 # load dataset
 
-input_signal_samples = np.load('dataset/input_signal_samples.npy')
-output_signal_samples = np.load('dataset/output_signal_samples.npy')
+input_signal_samples = np.load('input_signal_samples.npy')
+output_signal_samples = np.load('output_signal_samples.npy')
 
 
 MAX_POSSIBLE_DB = 24.0

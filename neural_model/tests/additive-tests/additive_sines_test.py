@@ -3,7 +3,7 @@ from random import uniform
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
-from neural_model.dsp_core import *
+from neural_model.dsp_core.dsp_core import *
 
 
 def rand_additive_sine_wave_signal(signal_buffer, harmonics_amount, low_freq_bound, hi_freq_bound, noise_max_amp):

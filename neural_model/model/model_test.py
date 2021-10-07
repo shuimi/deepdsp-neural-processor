@@ -3,9 +3,9 @@ from random import randint, uniform
 
 from keras.layers import Activation
 
-from neural_model.dataset_generation import chord_additive_signal, approximation_target_filter
-from neural_model.intervals_config import chords
-from neural_model.dsp_core import *
+from neural_model.dataset.dataset_generation import chord_additive_signal, approximation_target_filter
+from neural_model.config.intervals_config import chords
+from neural_model.dsp_core.dsp_core import *
 
 from tensorflow import keras
 from keras import backend as K

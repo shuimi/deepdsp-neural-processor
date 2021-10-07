@@ -1,8 +1,7 @@
-from math import floor
-
+from scipy.signal import butter, lfilter
 import numpy as np
 from random import random
-from neural_model.config import *
+from neural_model.config.config import *
 
 # config
 BASE_OSC_FREQUENCY = 440.0
@@ -211,7 +210,7 @@ def detune(samples_buffer, wave, freq, voices_amount, detune_st, blend):
     for detune_coefficient in np.arange(-detune_st / 2, detune_st / 2, detune_st / (voices_amount - 1)):
         output += wave(samples_buffer, freq=(1.0 + detune_coefficient / 12) * freq)
 
-    return output / voices_amount
+    return blend * (output / voices_amount) + (1.0 - blend) * wave(samples_buffer, freq=freq)
 
 
 def to16bit(_audio):
@@ -227,13 +226,35 @@ def db_rms(rms_value):
     return 10 * np.log10(rms_value)
 
 
-def pitch(buffer, semitones):
-    if semitones > 0:
-        new_buffer = buffer
-        samples_to_remove = floor(BUFFER_SIZE * 0.5 * 12 / semitones)
-        semitones
-    elif semitones == 0:
-        return buffer
-    else:
-        semitones
-    return buffer
+def butter_lowpass_filter(buffer, cutoff=1000.0, order=4, analog=False):
+    normalized_cutoff = cutoff / NYQUIST_FREQUENCY
+    b, a = butter(order, normalized_cutoff, btype='low', analog=analog)
+    return lfilter(b, a, buffer)
+
+
+def butter_highpass_filter(buffer, cutoff=1000.0, order=4, analog=False):
+    normalized_cutoff = cutoff / NYQUIST_FREQUENCY
+    b, a = butter(order, normalized_cutoff, btype='high', analog=analog)
+    return lfilter(b, a, buffer)
+
+
+def butter_bandpass_filter(buffer, cutoff_low=1.0, cutoff_hi=20000.0, order=1, analog=False):
+    b, a = butter(
+        order,
+        btype='band',
+        Wn=[cutoff_low / NYQUIST_FREQUENCY, cutoff_hi / NYQUIST_FREQUENCY],
+        analog=analog
+    )
+    return lfilter(b, a, buffer)
+
+
+# def pitch(buffer, semitones):
+#     if semitones > 0:
+#         new_buffer = buffer
+#         samples_to_remove = floor(BUFFER_SIZE * 0.5 * 12 / semitones)
+#         semitones
+#     elif semitones == 0:
+#         return buffer
+#     else:
+#         semitones
+#     return buffer

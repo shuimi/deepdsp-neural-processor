@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from keras import backend as K
-from neural_model.dsp_core import *
+from neural_model.dsp_core.dsp_core import *
 
 EARLY_STOPPING_PATIENCE = 4
 EARLY_STOPPING_MIN_DELTA = 0.001
@@ -14,8 +14,8 @@ def activation(x):
 
 # load dataset
 
-input_signal_samples = np.load('dataset/input_signal_samples.npy')
-output_signal_samples = np.load('dataset/output_signal_samples.npy')
+input_signal_samples = np.load('../dataset/input_signal_samples.npy')
+output_signal_samples = np.load('../dataset/output_signal_samples.npy')
 
 # setup model
 model = Sequential([
