@@ -3,20 +3,40 @@ from random import randint, uniform
 
 from keras.layers import Activation
 
-from neural_model.dataset.dataset_generation import chord_additive_signal, approximation_target_filter
 from neural_model.config.intervals_config import chords
+from neural_model.dataset.generation_tools import *
 from neural_model.dsp_core.dsp_core import *
 
 from tensorflow import keras
 from keras import backend as K
 from keras.utils.generic_utils import get_custom_objects
 
+import tensorflow as tf
+
 
 def activation(x):
     return NORMALIZATION_THRESHOLD * 2 * K.sigmoid(0.25 * x) - 1
 
 
+def pre_emphasis_filter(x, coeff=0.85):
+    return tf.concat([x[:, 0:1, :], x[:, 1:, :] - coeff * x[:, :-1, :]], axis=1)
+
+
+def dc_loss(target_y, predicted_y):
+    return tf.reduce_mean(
+        tf.square(tf.reduce_mean(target_y) - tf.reduce_mean(predicted_y))
+    ) / tf.reduce_mean(tf.square(target_y))
+
+
+def esr_loss(target_y, predicted_y, emphasis_func=lambda x: x):
+    target_yp = emphasis_func(target_y)
+    pred_yp = emphasis_func(predicted_y)
+    return tf.reduce_sum(tf.square(target_yp - pred_yp)) / tf.reduce_sum(tf.square(target_yp))
+
+
 get_custom_objects().update({'activation': Activation(activation)})
+get_custom_objects().update({'esr_loss': esr_loss})
+
 
 model = keras.models.load_model('model.h5')
 
@@ -38,10 +58,15 @@ for _ in range(BATCH_SIZE):
             norm_amp
         )
     ]
+    
 
 test_data = np.array(test_data)
 
 processed = np.array([approximation_target_filter(signal) for signal in test_data])
+
+
+# test_data = np.expand_dims(test_data, axis=2)
+# processed = np.expand_dims(processed, axis=2)
 
 
 # check prediction
@@ -54,9 +79,10 @@ def max_error(init_buffer, processed_buffer):
 
 
 for i in range(BATCH_SIZE):
-    fig, (ax_target, ax_source) = plt.subplots(nrows=2, constrained_layout=True)
+    fig, (ax_target, ax_delta, ax_source) = plt.subplots(nrows=3, constrained_layout=True)
 
     processed_line, prediction_line_1, = ax_target.plot(samples_field, processed[i], prediction[i])
+    delta_line, = ax_delta.plot(samples_field, processed[i] - prediction[i])
     test_line, prediction_line_2, = ax_source.plot(samples_field, test_data[i], prediction[i])
 
     ax_target.text(
@@ -64,11 +90,14 @@ for i in range(BATCH_SIZE):
     )
 
     ax_target.set(xlabel='Samples', ylabel='Amplitude', title='Signal: target, prediction')
+    ax_delta.set(xlabel='Samples', ylabel='Amplitude', title='Signal delta: target, prediction')
     ax_source.set(xlabel='Samples', ylabel='Amplitude', title='Signal: source, prediction')
 
     ax_target.legend([processed_line, prediction_line_1], ['Target processed signal', 'Model prediction'])
+    ax_delta.legend([delta_line], ['Delta: processed - predicted'])
     ax_source.legend([test_line, prediction_line_2], ['Unprocessed signal', 'Model prediction'])
 
     ax_target.grid()
+    ax_delta.grid()
     ax_source.grid()
     plt.show()
